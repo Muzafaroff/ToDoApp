@@ -14,21 +14,20 @@ final class ToDoListPresenter: ToDoListPresenterProtocol {
     var router: ToDoListRouterProtocol?
 
     
-    init(interactor: ToDoListInteractorProtocol) {
+    init(interactor: ToDoListInteractorProtocol, router: ToDoListRouterProtocol) {
         self.interactor = interactor
+        self.router = router
     }
     
     func viewDidLoad() {
         interactor.fetchTodos()
     }
     
-    func didSelectTodo(_ todo: ToDoItem) {
-        // 1. Обновляем статус
+    func didSelectTodo(_ todo: ToDoItem, at indexPath: IndexPath) {
+
         todo.isCompleted.toggle()
         CoreDataManager.shared.saveContext()
-        
-        // 2. Показываем детали
-        router?.showDetail(for: todo)
+        view?.reloadRow(at: indexPath)
     }
     
     func didFetchTodos(_ todos: [ToDoItem]) {
@@ -37,5 +36,9 @@ final class ToDoListPresenter: ToDoListPresenterProtocol {
     
     func didFailFetchingTodos(_ error: String) {
         view?.showError(error)
+    }
+    
+    func didTapEdit(todo: ToDoItem) {
+        router?.showDetail(for: todo)
     }
 }

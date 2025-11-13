@@ -79,6 +79,10 @@ final class ToDoListViewController: UIViewController {
         todos.remove(at: indexPath.row)
         tableView.deleteRows(at: [indexPath], with: .fade)
     }
+    
+    func reloadRow(at indexPath: IndexPath) {
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+    }
 }
 
 extension ToDoListViewController: UITableViewDataSource, UITableViewDelegate {
@@ -99,7 +103,7 @@ extension ToDoListViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        presenter?.didSelectTodo(todos[indexPath.row])
+        presenter?.didSelectTodo(todos[indexPath.row], at: indexPath)
     }
     
     func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -115,7 +119,7 @@ extension ToDoListViewController: UITableViewDataSource, UITableViewDelegate {
             
             let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
                 print("Редактировать: \(todo.title ?? "")")
-                // Здесь нужно вызывать экран редактирования через presenter
+                self.presenter?.router?.showDetail(for: todo)
             }
             let shareAction = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
                 let text = todo.title ?? ""
