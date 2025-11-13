@@ -12,12 +12,15 @@ final class ToDoListModuleBuilder {
     
     static func build() -> ToDoListViewController {
         let interactor = ToDoListInteractor()
-        let presenter = ToDoListPresenter(interactor: interactor)
         let viewController = ToDoListViewController()
+        let router = ToDoListRouter()
+        let presenter = ToDoListPresenter(interactor: interactor, router: router)
+
         
         viewController.presenter = presenter
         presenter.view = viewController
         interactor.presenter = presenter
+        router.viewController = viewController
         
         return viewController
     }
