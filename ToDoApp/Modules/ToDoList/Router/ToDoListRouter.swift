@@ -15,11 +15,7 @@ final class ToDoListRouter: ToDoListRouterProtocol {
     weak var viewController: UIViewController?
     
     func showDetail(for todo: ToDoItem) {
-        // Пока просто показываем алерт вместо экрана деталей
-        let alert = UIAlertController(title: todo.title,
-                                      message: "ID: \(todo.id)\nВыполнено: \(todo.isCompleted ? "Да" : "Нет")",
-                                      preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        viewController?.present(alert, animated: true)
+        let editVC = EditTodoModuleBuilder.build(todo: todo)
+        viewController?.navigationController?.pushViewController(editVC, animated: true)
     }
 }

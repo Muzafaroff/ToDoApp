@@ -40,7 +40,7 @@ final class CoreDataManager {
         return persistentContainer.viewContext
     }
     
-    // Background context для тяжелых операций
+    // Background context 
     lazy var backgroundContext: NSManagedObjectContext = {
         let context = persistentContainer.newBackgroundContext()
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
