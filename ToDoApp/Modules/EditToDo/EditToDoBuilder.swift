@@ -8,9 +8,9 @@
 import UIKit
 
 final class EditTodoModuleBuilder {
-    static func build(todo: ToDoItem) -> UIViewController {
+    static func build(todo: ToDoItem?) -> UIViewController {
         let interactor = EditTodoInteractor()
-        let presenter = EditTodoPresenter(todo: todo, interactor: interactor)
+        let presenter = EditTodoPresenter(todo: todo, interactor: interactor) 
         let view = EditTodoViewController()
         
         view.presenter = presenter

@@ -9,36 +9,40 @@ import Foundation
 
 final class ToDoListPresenter: ToDoListPresenterProtocol {
     
+    // MARK: - Properties
     weak var view: ToDoListViewProtocol?
     private let interactor: ToDoListInteractorProtocol
     var router: ToDoListRouterProtocol?
-
     
+    // MARK: - Init
     init(interactor: ToDoListInteractorProtocol, router: ToDoListRouterProtocol) {
         self.interactor = interactor
         self.router = router
     }
     
+    // MARK: - View Lifecycle
     func viewDidLoad() {
         interactor.fetchTodos()
     }
     
+    // MARK: - User Actions
     func didSelectTodo(_ todo: ToDoItem, at indexPath: IndexPath) {
-
         todo.isCompleted.toggle()
+        print("Todo \(todo.title ?? "") isCompleted = \(todo.isCompleted)")
         CoreDataManager.shared.saveContext()
         view?.reloadRow(at: indexPath)
     }
     
+    func didTapEdit(todo: ToDoItem?) {
+        router?.showDetail(for: todo)
+    }
+    
+    // MARK: - Interactor Callbacks
     func didFetchTodos(_ todos: [ToDoItem]) {
         view?.showTodos(todos)
     }
     
     func didFailFetchingTodos(_ error: String) {
         view?.showError(error)
-    }
-    
-    func didTapEdit(todo: ToDoItem) {
-        router?.showDetail(for: todo)
     }
 }

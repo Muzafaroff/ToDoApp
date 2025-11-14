@@ -19,11 +19,11 @@ protocol ToDoListPresenterProtocol: AnyObject {
     var view: ToDoListViewProtocol? { get set }
 
     func viewDidLoad()
+    func didTapEdit(todo: ToDoItem?)
     func didSelectTodo(_ todo: ToDoItem, at indexPath: IndexPath)
     func didFetchTodos(_ todos: [ToDoItem])
     func didFailFetchingTodos(_ error: String)
     var router: ToDoListRouterProtocol? { get set }
-
 }
 
 protocol ToDoListInteractorProtocol: AnyObject {
@@ -31,5 +31,5 @@ protocol ToDoListInteractorProtocol: AnyObject {
 }
 
 protocol ToDoListRouterProtocol: AnyObject {
-    func showDetail(for todo: ToDoItem)
+    func showDetail(for todo: ToDoItem?)
 }

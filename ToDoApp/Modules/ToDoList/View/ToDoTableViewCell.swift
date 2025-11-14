@@ -8,21 +8,29 @@
 import UIKit
 
 final class ToDoTableViewCell: UITableViewCell {
-
+    
+    // MARK: - Properties
     static let identifier = "ToDoTableViewCell"
     
+    var editAction: (() -> Void)?
+    var shareAction: (() -> Void)?
+    var deleteAction: (() -> Void)?
+    var circleTapAction: (() -> Void)?
+    
+    // MARK: - UI Elements
     let circleButton: UIButton = {
         let button = UIButton(type: .system)
         button.layer.cornerRadius = 12
         button.layer.borderWidth = 2
-        button.layer.borderColor = UIColor.systemGray.cgColor
+        let circleBorderColor = UIColor(red: 77/255, green: 85/255, blue: 94/255, alpha: 1)
+        button.layer.borderColor = circleBorderColor.cgColor
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
     let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -43,10 +51,14 @@ final class ToDoTableViewCell: UITableViewCell {
         return label
     }()
     
-    var circleTapAction: (() -> Void)?
-    
+    // MARK: - Lifecycle
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
+        
+        contentView.backgroundColor = .clear
+        backgroundColor = .clear
+        selectionStyle = .none
+        
         contentView.addSubview(circleButton)
         contentView.addSubview(titleLabel)
         contentView.addSubview(descriptionLabel)
@@ -55,12 +67,75 @@ final class ToDoTableViewCell: UITableViewCell {
         circleButton.addTarget(self, action: #selector(circleTapped), for: .touchUpInside)
         
         setupConstraints()
+        
+        let interaction = UIContextMenuInteraction(delegate: self)
+        contentView.addInteraction(interaction)
     }
     
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.textColor = .white
+        descriptionLabel.textColor = .white
+        titleLabel.attributedText = NSAttributedString(string: "")
+        circleButton.backgroundColor = .clear
+        circleButton.setImage(nil, for: .normal)
+    }
+    
+    // MARK: - Actions
     @objc private func circleTapped() {
         circleTapAction?()
     }
     
+    // MARK: - Configuration
+    func configure(with todo: ToDoItem) {
+        titleLabel.text = todo.title
+        descriptionLabel.text = todo.todoDescription
+        
+        if let date = todo.createdAt {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            dateLabel.text = formatter.string(from: date)
+        } else {
+            dateLabel.text = ""
+        }
+        
+        updateCircleAndText(todo.isCompleted)
+    }
+    
+    func updateCircleAndText(_ completed: Bool) {
+        if completed {
+            let orangeColor = UIColor(red: 254/255, green: 215/255, blue: 2/255, alpha: 1)
+            circleButton.backgroundColor = .clear
+            circleButton.layer.borderColor = orangeColor.cgColor
+            circleButton.layer.borderWidth = 2
+            
+            let config = UIImage.SymbolConfiguration(pointSize: 12, weight: .bold)
+            circleButton.setImage(UIImage(systemName: "checkmark", withConfiguration: config), for: .normal)
+            circleButton.tintColor = orangeColor
+            
+            titleLabel.textColor = .gray
+            descriptionLabel.textColor = .gray
+            titleLabel.attributedText = NSAttributedString(
+                string: titleLabel.text ?? "",
+                attributes: [.strikethroughStyle: NSUnderlineStyle.single.rawValue]
+            )
+        } else {
+            circleButton.backgroundColor = .clear
+            circleButton.layer.borderColor = UIColor.systemGray.cgColor
+            circleButton.layer.borderWidth = 2
+            circleButton.setImage(nil, for: .normal)
+            
+            titleLabel.textColor = .white
+            descriptionLabel.textColor = .white
+            titleLabel.attributedText = NSAttributedString(string: titleLabel.text ?? "", attributes: [:])
+        }
+    }
+    
+    // MARK: - Layout
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             circleButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
@@ -81,43 +156,32 @@ final class ToDoTableViewCell: UITableViewCell {
             dateLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
     }
-    
-    func configure(with todo: ToDoItem) {
-        titleLabel.text = todo.title
-        descriptionLabel.text = todo.todoDescription
-        if let date = todo.createdAt {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            dateLabel.text = formatter.string(from: date)
-        } else {
-            dateLabel.text = ""
-        }
-        
-        updateCircleAndText(todo.isCompleted)
-    }
-    
-    func updateCircleAndText(_ completed: Bool) {
-        if completed {
-            circleButton.backgroundColor = .systemOrange
-            titleLabel.textColor = .gray
-            descriptionLabel.textColor = .gray
-            titleLabel.attributedText = NSAttributedString(
-                string: titleLabel.text ?? "",
-                attributes: [.strikethroughStyle: NSUnderlineStyle.single.rawValue]
-            )
-        } else {
-            circleButton.backgroundColor = .clear
-            titleLabel.textColor = .black
-            descriptionLabel.textColor = .darkGray
-            titleLabel.attributedText = NSAttributedString(
-                string: titleLabel.text ?? "",
-                attributes: [:]
-            )
-        }
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
 }
 
+// MARK: - UIContextMenuInteractionDelegate
+extension ToDoTableViewCell: UIContextMenuInteractionDelegate {
+    
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        
+        contentView.backgroundColor = UIColor(red: 39/255, green: 39/255, blue: 41/255, alpha: 1)
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let edit = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
+                self.editAction?()
+            }
+            let share = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                self.shareAction?()
+            }
+            let delete = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                self.deleteAction?()
+            }
+            return UIMenu(title: "", children: [edit, share, delete])
+        }
+    }
+    
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willEndFor configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionAnimating?) {
+        animator?.addCompletion {
+            self.contentView.backgroundColor = .clear
+        }
+    }
+}
