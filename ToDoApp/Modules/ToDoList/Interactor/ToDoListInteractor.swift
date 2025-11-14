@@ -78,7 +78,15 @@ final class ToDoListInteractor: ToDoListInteractorProtocol {
         let context = CoreDataManager.shared.backgroundContext
         context.perform {
             for dto in todosDTO {
-                let todo = ToDoItem(context: context)
+                
+                // Проверяем, существует ли уже задача с таким id
+                let fetchRequest: NSFetchRequest<ToDoItem> = ToDoItem.fetchRequest()
+                fetchRequest.predicate = NSPredicate(format: "id == %d", dto.id)
+                let existingTodo = try? context.fetch(fetchRequest).first
+                
+                // Если есть — обновляем, если нет — создаем новую
+                let todo = existingTodo ?? ToDoItem(context: context)
+                
                 todo.id = Int32(dto.id)
                 todo.title = dto.todo
                 todo.todoDescription = ""
