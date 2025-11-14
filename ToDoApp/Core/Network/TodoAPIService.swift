@@ -58,8 +58,8 @@ final class TodoAPIService: TodoAPIServiceProtocol {
             default:
                 completion(.failure(.unknown("Ошибка (\(response.statusCode))")))
                 
-                }
-
+            }
+            
             
         }.resume()
         

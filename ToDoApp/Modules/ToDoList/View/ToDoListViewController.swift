@@ -5,46 +5,137 @@
 //  Created by Илья Музафаров on 11.11.2025.
 //
 
-
-
 import UIKit
 
 final class ToDoListViewController: UIViewController {
     
+    // MARK: - Properties
     var presenter: ToDoListPresenterProtocol?
-    
     private var todos: [ToDoItem] = []
+    
+    // MARK: - UI Elements
     private let tableView = UITableView()
     
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "Задачи"
-        label.font = UIFont.systemFont(ofSize: 24, weight: .bold)
+        label.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        label.textColor = .white
         return label
     }()
-
+    
     private let searchBar: UISearchBar = {
         let sb = UISearchBar()
-        sb.placeholder = "Поиск"
+        sb.searchBarStyle = .minimal
+        sb.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
+        sb.backgroundColor = .clear
+        sb.isTranslucent = true
+        
+        let tf = sb.searchTextField
+        tf.backgroundColor = UIColor(red: 55/255, green: 55/255, blue: 60/255, alpha: 1)
+        tf.textColor = .white
+        tf.attributedPlaceholder = NSAttributedString(
+            string: "Search",
+            attributes: [.foregroundColor: UIColor.lightGray]
+        )
+        if let leftIcon = tf.leftView as? UIImageView {
+            leftIcon.tintColor = .lightGray
+        }
         return sb
     }()
     
+    private let bottomPanel: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(red: 39/255, green: 39/255, blue: 41/255, alpha: 1)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let tasksCountLabel: UILabel = {
+        let label = UILabel()
+        label.text = "0 задач"
+        label.font = UIFont.systemFont(ofSize: 14)
+        label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let addButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
+        button.tintColor = UIColor(red: 254/255, green: 215/255, blue: 2/255, alpha: 1)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "ToDo List"
-        view.backgroundColor = .systemBackground
         
+        setupNavigation()
         setupUI()
         setupTableView()
+        addButton.addTarget(self, action: #selector(addButtonTapped), for: .touchUpInside)
+        setupResetButton()
         
         presenter?.viewDidLoad()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        presenter?.viewDidLoad()
+        tableView.reloadData()
+    }
+    
+    // MARK: - Navigation Setup
+    private func setupNavigation() {
+        view.backgroundColor = .black
+        let backItem = UIBarButtonItem()
+        backItem.title = "Назад"
+        backItem.tintColor = UIColor(red: 254/255, green: 215/255, blue: 2/255, alpha: 1)
+        navigationItem.backBarButtonItem = backItem
+    }
+    
+    private func setupResetButton() {
+        let resetButton = UIBarButtonItem(title: "Сброс", style: .plain, target: self, action: #selector(resetData))
+        resetButton.tintColor = .white
+        navigationItem.rightBarButtonItem = resetButton
+    }
+    
+    // MARK: - Actions
+    @objc private func addButtonTapped() {
+        presenter?.router?.showDetail(for: nil)
+    }
+    
+    @objc private func resetData() {
+        CoreDataManager.shared.clearAllData()
+        presenter?.viewDidLoad()
+    }
+    
+    private func deleteTodo(at indexPath: IndexPath) {
+        let todo = todos[indexPath.row]
+        let context = CoreDataManager.shared.mainContext
+        context.delete(todo)
+        CoreDataManager.shared.saveContext()
+        todos.remove(at: indexPath.row)
+        tableView.deleteRows(at: [indexPath], with: .fade)
+        
+        tasksCountLabel.text = "\(todos.count) задач"
+
+    }
+    
+    func reloadRow(at indexPath: IndexPath) {
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+    }
+    
+    // MARK: - UI Setup
     private func setupUI() {
-        [titleLabel, searchBar, tableView].forEach {
+        [titleLabel, searchBar, tableView, bottomPanel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
+        bottomPanel.addSubview(tasksCountLabel)
+        bottomPanel.addSubview(addButton)
         
         searchBar.delegate = self
         
@@ -59,87 +150,87 @@ final class ToDoListViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: bottomPanel.topAnchor),
+            
+            bottomPanel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bottomPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bottomPanel.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            bottomPanel.heightAnchor.constraint(equalToConstant: 83),
+            
+            tasksCountLabel.topAnchor.constraint(equalTo: bottomPanel.topAnchor, constant: 21),
+            tasksCountLabel.centerXAnchor.constraint(equalTo: bottomPanel.centerXAnchor),
+            
+            addButton.topAnchor.constraint(equalTo: bottomPanel.topAnchor, constant: 8),
+            addButton.trailingAnchor.constraint(equalTo: bottomPanel.trailingAnchor, constant: -16),
+            addButton.widthAnchor.constraint(equalToConstant: 40),
+            addButton.heightAnchor.constraint(equalToConstant: 40)
         ])
     }
     
     private func setupTableView() {
+        tableView.backgroundColor = .black
+        tableView.backgroundView = nil
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(ToDoTableViewCell.self, forCellReuseIdentifier: ToDoTableViewCell.identifier)
-        
-    }
-    
-    
-    private func deleteTodo(at indexPath: IndexPath) {
-        let todo = todos[indexPath.row]
-        let context = CoreDataManager.shared.mainContext
-        context.delete(todo)
-        CoreDataManager.shared.saveContext()
-        todos.remove(at: indexPath.row)
-        tableView.deleteRows(at: [indexPath], with: .fade)
-    }
-    
-    func reloadRow(at indexPath: IndexPath) {
-        tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 }
 
+// MARK: - UITableViewDataSource & UITableViewDelegate
 extension ToDoListViewController: UITableViewDataSource, UITableViewDelegate {
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         todos.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: ToDoTableViewCell.identifier, for: indexPath) as! ToDoTableViewCell
         let todo = todos[indexPath.row]
         cell.configure(with: todo)
-        cell.circleTapAction = {
-            todo.isCompleted.toggle()
-            CoreDataManager.shared.saveContext()
-            cell.updateCircleAndText(todo.isCompleted)
+        
+        // MARK: - Cell Actions
+        cell.circleTapAction = { [weak self] in
+            guard let self = self else { return }
+            self.presenter?.didSelectTodo(todo, at: indexPath)
         }
+        
+        cell.editAction = { [weak self] in
+            guard let self = self else { return }
+            self.presenter?.didTapEdit(todo: todo)
+        }
+        
+        cell.deleteAction = { [weak self] in
+            guard let self = self else { return }
+            self.deleteTodo(at: indexPath)
+        }
+        
+        cell.shareAction = { [weak self] in
+            guard let self = self else { return }
+            let activityVC = UIActivityViewController(activityItems: [todo.title ?? ""], applicationActivities: nil)
+            self.present(activityVC, animated: true)
+        }
+        
+        if cell.interactions.isEmpty {
+            let interaction = UIContextMenuInteraction(delegate: cell)
+            cell.addInteraction(interaction)
+        }
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         presenter?.didSelectTodo(todos[indexPath.row], at: indexPath)
     }
-    
-    func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        cell.transform = .identity
-        cell.backgroundColor = .clear
-    }
-    
-    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        
-        let todo = todos[indexPath.row]
-        
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-            
-            let editAction = UIAction(title: "Редактировать", image: UIImage(systemName: "pencil")) { _ in
-                print("Редактировать: \(todo.title ?? "")")
-                self.presenter?.router?.showDetail(for: todo)
-            }
-            let shareAction = UIAction(title: "Поделиться", image: UIImage(systemName: "square.and.arrow.up")) { _ in
-                let text = todo.title ?? ""
-                let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
-                self.present(activityVC, animated: true)
-            }
-            let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
-                self.deleteTodo(at: indexPath)
-            }
-            return UIMenu(title: "", children: [editAction, shareAction, deleteAction])
-        }
-    }
-    
-    
 }
 
+// MARK: - ToDoListViewProtocol
 extension ToDoListViewController: ToDoListViewProtocol {
+    
     func showTodos(_ todos: [ToDoItem]) {
         self.todos = todos
         tableView.reloadData()
+        tasksCountLabel.text = "\(todos.count) задач"
     }
     
     func showError(_ message: String) {
@@ -149,7 +240,9 @@ extension ToDoListViewController: ToDoListViewProtocol {
     }
 }
 
+// MARK: - UISearchBarDelegate
 extension ToDoListViewController: UISearchBarDelegate {
+    
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchText.isEmpty {
             presenter?.viewDidLoad()

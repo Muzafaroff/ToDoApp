@@ -7,33 +7,37 @@
 
 import UIKit
 
-
-
 final class EditTodoViewController: UIViewController {
     
+    // MARK: - Properties
     var presenter: EditTodoPresenterProtocol?
     
-    // MARK: - UI
+    // MARK: - UI Elements
     private let titleTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "Заголовок задачи"
-        textField.borderStyle = .roundedRect
+        textField.borderStyle = .none
+        textField.backgroundColor = .clear
+        textField.textColor = .white
+        textField.font = .systemFont(ofSize: 34, weight: .bold)
         return textField
     }()
     
     private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 14)
+        label.font = .systemFont(ofSize: 12)
         label.textColor = .gray
         return label
     }()
     
     private let descriptionTextView: UITextView = {
         let textView = UITextView()
-        textView.layer.cornerRadius = 8
-        textView.layer.borderWidth = 1
-        textView.layer.borderColor = UIColor.systemGray4.cgColor
+        textView.backgroundColor = .clear
+        textView.textColor = .white
         textView.font = .systemFont(ofSize: 16)
+        textView.isScrollEnabled = true
+        textView.alwaysBounceVertical = true
+        textView.textContainerInset = UIEdgeInsets(top: 0, left: 17, bottom: 0, right: 20)
         return textView
     }()
     
@@ -46,18 +50,15 @@ final class EditTodoViewController: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
-        // Сохраняем изменения перед закрытием экрана
         presenter?.saveChanges(
             title: titleTextField.text ?? "",
             description: descriptionTextView.text ?? ""
         )
     }
     
-    // MARK: - Setup
+    // MARK: - UI Setup
     private func setupUI() {
-        view.backgroundColor = .systemBackground
-        title = "Редактирование"
+        view.backgroundColor = .black
         
         view.addSubview(titleTextField)
         view.addSubview(dateLabel)
@@ -73,24 +74,25 @@ final class EditTodoViewController: UIViewController {
             titleTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
             dateLabel.topAnchor.constraint(equalTo: titleTextField.bottomAnchor, constant: 8),
-            dateLabel.leadingAnchor.constraint(equalTo: titleTextField.leadingAnchor),
+            dateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            dateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
             
             descriptionTextView.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 12),
-            descriptionTextView.leadingAnchor.constraint(equalTo: titleTextField.leadingAnchor),
-            descriptionTextView.trailingAnchor.constraint(equalTo: titleTextField.trailingAnchor),
-            descriptionTextView.heightAnchor.constraint(equalToConstant: 200),
+            descriptionTextView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            descriptionTextView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            descriptionTextView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 }
 
-// MARK: - View Protocol
+// MARK: - EditTodoViewProtocol
 extension EditTodoViewController: EditTodoViewProtocol {
-    func displayTodo(_ todo: ToDoItem) {
-        titleTextField.text = todo.title
-        descriptionTextView.text = todo.todoDescription
+    func displayTodo(_ todo: ToDoItem?) {
+        titleTextField.text = todo?.title
+        descriptionTextView.text = todo?.todoDescription
         
         let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        dateLabel.text = "Дата: \(dateFormatter.string(from: todo.createdAt ?? Date()))"
+        dateFormatter.dateFormat = "dd/MM/yyyy"
+        dateLabel.text = "\(dateFormatter.string(from: todo?.createdAt ?? Date()))"
     }
 }

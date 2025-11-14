@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 protocol EditTodoViewProtocol: AnyObject {
-    func displayTodo(_ todo: ToDoItem)
+    func displayTodo(_ todo: ToDoItem?)
 }
 
 protocol EditTodoPresenterProtocol: AnyObject {
@@ -18,5 +18,5 @@ protocol EditTodoPresenterProtocol: AnyObject {
 }
 
 protocol EditTodoInteractorProtocol: AnyObject {
-    func saveTodo(_ todo: ToDoItem)
+    func saveOrUpdateTodo(existingTodo: ToDoItem?, title: String, description: String)
 }

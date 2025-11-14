@@ -14,7 +14,7 @@ final class ToDoListRouter: ToDoListRouterProtocol {
     
     weak var viewController: UIViewController?
     
-    func showDetail(for todo: ToDoItem) {
+    func showDetail(for todo: ToDoItem?) {
         let editVC = EditTodoModuleBuilder.build(todo: todo)
         viewController?.navigationController?.pushViewController(editVC, animated: true)
     }
