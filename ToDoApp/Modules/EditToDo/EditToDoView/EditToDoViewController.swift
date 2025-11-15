@@ -20,6 +20,9 @@ final class EditTodoViewController: UIViewController {
         textField.backgroundColor = .clear
         textField.textColor = .white
         textField.font = .systemFont(ofSize: 34, weight: .bold)
+        
+        textField.returnKeyType = .done
+        
         return textField
     }()
     
@@ -38,6 +41,8 @@ final class EditTodoViewController: UIViewController {
         textView.isScrollEnabled = true
         textView.alwaysBounceVertical = true
         textView.textContainerInset = UIEdgeInsets(top: 0, left: 17, bottom: 0, right: 20)
+        
+        
         return textView
     }()
     
@@ -46,6 +51,11 @@ final class EditTodoViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         presenter?.viewDidLoad()
+        
+        titleTextField.delegate = self
+        
+        hideKeyboardOnTap()
+        addDoneButtonToTextView()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -83,6 +93,34 @@ final class EditTodoViewController: UIViewController {
             descriptionTextView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
+    
+    // MARK: - Keyboard
+    private func hideKeyboardOnTap() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
+    // MARK: - Keyboard Toolbar for UITextView
+    private func addDoneButtonToTextView() {
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneTapped))
+        
+        toolbar.items = [flexSpace, doneButton]
+        
+        descriptionTextView.inputAccessoryView = toolbar
+    }
+    
+    @objc private func doneTapped() {
+        descriptionTextView.resignFirstResponder()
+    }
 }
 
 // MARK: - EditTodoViewProtocol
@@ -96,3 +134,13 @@ extension EditTodoViewController: EditTodoViewProtocol {
         dateLabel.text = "\(dateFormatter.string(from: todo?.createdAt ?? Date()))"
     }
 }
+
+// MARK: - UITextFieldDelegate
+
+extension EditTodoViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+}
+

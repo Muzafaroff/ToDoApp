@@ -31,6 +31,9 @@ final class ToDoListViewController: UIViewController {
         sb.backgroundColor = .clear
         sb.isTranslucent = true
         
+        sb.returnKeyType = .done
+        
+        
         let tf = sb.searchTextField
         tf.backgroundColor = UIColor(red: 55/255, green: 55/255, blue: 60/255, alpha: 1)
         tf.textColor = .white
@@ -79,6 +82,8 @@ final class ToDoListViewController: UIViewController {
         setupResetButton()
         
         presenter?.viewDidLoad()
+        searchBar.delegate = self
+        hideKeyboardOnTap()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -121,7 +126,7 @@ final class ToDoListViewController: UIViewController {
         tableView.deleteRows(at: [indexPath], with: .fade)
         
         tasksCountLabel.text = "\(todos.count) задач"
-
+        
     }
     
     func reloadRow(at indexPath: IndexPath) {
@@ -173,6 +178,17 @@ final class ToDoListViewController: UIViewController {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(ToDoTableViewCell.self, forCellReuseIdentifier: ToDoTableViewCell.identifier)
+    }
+    
+    // MARK: - Keyboard
+    private func hideKeyboardOnTap() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 }
 
@@ -250,5 +266,9 @@ extension ToDoListViewController: UISearchBarDelegate {
             let filtered = todos.filter { $0.title?.lowercased().contains(searchText.lowercased()) ?? false }
             showTodos(filtered)
         }
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
     }
 }
